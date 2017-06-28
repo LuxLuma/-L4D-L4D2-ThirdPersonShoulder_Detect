@@ -3,12 +3,14 @@
 
 #pragma semicolon 1
 
+#define PLUGIN_VERSION "1.2.2"
+
 public Plugin:myinfo =
 {
 	name = "ThirdPersonShoulder_Detect",
 	author = "MasterMind420 & Lux",
 	description = "Detects thirdpersonshoulder command for other plugins to use",
-	version = "1.2",
+	version = PLUGIN_VERSION,
 	url = "https://forums.alliedmods.net/showthread.php?p=2529779"
 };
 
@@ -30,6 +32,8 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 public OnPluginStart()
 {
+	CreateConVar("ThirdPersonShoulder_Detect_Version", PLUGIN_VERSION, "Version Of Plugin", FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_DONTRECORD);
+
 	HookEvent("player_team", eTeamChange);
 	HookEvent("player_death", ePlayerDeath);
 	HookEvent("map_transition", eMapTransition);
