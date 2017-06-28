@@ -34,6 +34,8 @@ public OnPluginStart()
 	HookEvent("player_death", ePlayerDeath);
 	HookEvent("map_transition", eMapTransition);
 	HookEvent("survivor_rescued", eSurvivorRescued);
+	HookEvent("player_disconnect", ePlayerDisconnect);
+
 	
 	hCvar_GameMode = FindConVar("mp_gamemode");
 	HookConVarChange(hCvar_GameMode, eConvarChanged);
@@ -46,13 +48,6 @@ public OnPluginStart()
 public OnMapStart()
 {
 	CvarsChanged();
-}
-
-public OnClientDisconnect(iClient)
-{
-	bThirdPerson[iClient] = false;
-	bThirdPersonFix[iClient] = false;
-	bMapTransition[iClient] = false;
 }
 
 public eConvarChanged(Handle:hCvar, const String:sOldVal[], const String:sNewVal[])
@@ -112,7 +107,7 @@ public QueryClientConVarCallback(QueryCookie:sCookie, iClient, ConVarQueryResult
 	Call_Finish();
 }
 
-public Action:CallVote(iClient, const String:command[], argc)
+public Action:CallVote(iClient, const String:sCommand[], iArg)
 {
 	GetCmdArg(1, sVote[iClient], sizeof(sVote[]));
 	
@@ -183,6 +178,20 @@ public eMapTransition(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
 		bMapTransition[i] = true;
 	}
 }
+
+public ePlayerDisconnect(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+{
+	static iClient;
+	iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
+	
+	if(iClient < 1)
+		return;
+	
+	bThirdPerson[iClient] = false;
+	bThirdPersonFix[iClient] = false;
+	bMapTransition[iClient] = false;
+}
+
 
 static bool:IsValidClient(iClient)
 {
