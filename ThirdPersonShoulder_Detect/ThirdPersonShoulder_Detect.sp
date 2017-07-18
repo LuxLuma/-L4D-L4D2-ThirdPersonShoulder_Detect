@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "1.2.2"
+#define PLUGIN_VERSION "1.4"
 
 public Plugin:myinfo =
 {
@@ -14,15 +14,14 @@ public Plugin:myinfo =
 	url = "https://forums.alliedmods.net/showthread.php?p=2529779"
 };
 
-static String:sVote[MAXPLAYERS+1][16];
-
 static bool:bVersus = false;
 static bool:bThirdPerson[MAXPLAYERS+1] = false;
 static bool:bThirdPersonFix[MAXPLAYERS+1] = false;
-static bool:bMapTransition[MAXPLAYERS+1] = false;
 
 static Handle:hCvar_GameMode = INVALID_HANDLE;
 new Handle:g_hOnThirdPersonChanged = INVALID_HANDLE;
+
+
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
@@ -36,15 +35,12 @@ public OnPluginStart()
 
 	HookEvent("player_team", eTeamChange);
 	HookEvent("player_death", ePlayerDeath);
-	HookEvent("map_transition", eMapTransition);
 	HookEvent("survivor_rescued", eSurvivorRescued);
-	HookEvent("player_disconnect", ePlayerDisconnect);
 
 	
 	hCvar_GameMode = FindConVar("mp_gamemode");
 	HookConVarChange(hCvar_GameMode, eConvarChanged);
 	
-	AddCommandListener(CallVote, "callvote");
 	
 	CreateTimer(0.25, tThirdPersonCheck, INVALID_HANDLE, TIMER_REPEAT);
 }
@@ -61,7 +57,7 @@ public eConvarChanged(Handle:hCvar, const String:sOldVal[], const String:sNewVal
 
 CvarsChanged()
 {
-	static String:sGamemode[32];
+	static String:sGamemode[7];
 	GetConVarString(hCvar_GameMode, sGamemode, sizeof(sGamemode));
 	bVersus = StrEqual("versus", sGamemode, false);
 }
@@ -111,27 +107,6 @@ public QueryClientConVarCallback(QueryCookie:sCookie, iClient, ConVarQueryResult
 	Call_Finish();
 }
 
-public Action:CallVote(iClient, const String:sCommand[], iArg)
-{
-	GetCmdArg(1, sVote[iClient], sizeof(sVote[]));
-	
-	if(sVote[iClient][0] != 'r' || sVote[iClient][0] != 'c')
-		return Plugin_Continue;
-	
-	if(StrEqual(sVote[iClient], "restartgame", false) || StrEqual(sVote[iClient], "changemission", false) || StrEqual(sVote[iClient], "returntolobby", false))
-	{
-		static i;
-		for(i = 1; i <= MaxClients; i++)
-		{
-			if(!IsValidClient(i) || IsFakeClient(i))
-				continue;
-			
-			bMapTransition[i] = true;
-		}
-	}
-	return Plugin_Continue;
-}
-
 public ePlayerDeath(Handle:hEvent, const String:sMame[], bool:bDontBroadcast)
 {
 	static iClient;
@@ -162,40 +137,19 @@ public eTeamChange(Handle:hEvent, const String:sMame[], bool:bDontBroadcast)
 	if(!IsValidClient(iClient) || IsFakeClient(iClient))
 		return;
 	
-	if(bMapTransition[iClient])
-	{
-		bMapTransition[iClient] = false;
-		bThirdPersonFix[iClient] = false;
-	}
-	else
-		bThirdPersonFix[iClient] = true;
+	bThirdPersonFix[iClient] = true;
 }
 
-public eMapTransition(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+public OnClientPutInServer(iClient)
 {
-	static i;
-	for(i = 1; i <= MaxClients; i++)
-	{
-		if(!IsValidClient(i) || IsFakeClient(i))
-			continue;
-		
-		bMapTransition[i] = true;
-	}
+	bThirdPersonFix[iClient] = true;
 }
 
-public ePlayerDisconnect(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+public OnClientDisconnect(iClient)
 {
-	static iClient;
-	iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-	
-	if(iClient < 1)
-		return;
-	
-	bThirdPerson[iClient] = false;
 	bThirdPersonFix[iClient] = false;
-	bMapTransition[iClient] = false;
+	bThirdPerson[iClient] = false;
 }
-
 
 static bool:IsValidClient(iClient)
 {
