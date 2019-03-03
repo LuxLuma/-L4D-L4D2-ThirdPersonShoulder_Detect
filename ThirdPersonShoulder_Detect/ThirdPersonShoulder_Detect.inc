@@ -7,6 +7,5 @@
 *	@param 	iClient			Client Index.
 *	@param 	bIsThirdPerson	true = Is in thirdperson shoulder, false otherwise.
 */
-forward TP_OnThirdPersonChanged(iClient, bool:bIsThirdPerson);
-
+forward void TP_OnThirdPersonChanged(int iClient, bool bIsThirdPerson);
 
