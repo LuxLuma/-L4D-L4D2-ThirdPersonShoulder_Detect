@@ -4,7 +4,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.5"
+#define PLUGIN_VERSION "1.5.1"
 
 public Plugin myinfo =
 {
@@ -76,15 +76,6 @@ public Action tThirdPersonCheck(Handle hTimer)
 
 public void QueryClientConVarCallback(QueryCookie sCookie, int iClient, ConVarQueryResult sResult, const char[] sCvarName, const char[] sCvarValue)
 {
-	if(bVersus)
-	{
-		Call_StartForward(g_hOnThirdPersonChanged);
-		Call_PushCell(iClient);
-		Call_PushCell(false);
-		Call_Finish();
-		return;
-	}
-	
 	static bool bLastVal;
 	bLastVal = bThirdPerson[iClient];
 	
@@ -98,11 +89,11 @@ public void QueryClientConVarCallback(QueryCookie sCookie, int iClient, ConVarQu
 		else
 			bThirdPerson[iClient] = true;
 	}
-	//FIRSTPERSON
-	else
+	else //FIRSTPERSON
 	{
+		if(IsClientInGame(iClient) && IsPlayerAlive(iClient))// just incase tps gets toggled while dead.
+			bThirdPersonFix[iClient] = false;
 		bThirdPerson[iClient] = false;
-		bThirdPersonFix[iClient] = false;
 	}
 	
 	if(bLastVal == bThirdPerson[iClient])
@@ -110,7 +101,14 @@ public void QueryClientConVarCallback(QueryCookie sCookie, int iClient, ConVarQu
 	
 	Call_StartForward(g_hOnThirdPersonChanged);
 	Call_PushCell(iClient);
-	Call_PushCell(bThirdPerson[iClient]);
+	if(!bVersus)
+	{
+		Call_PushCell(bThirdPerson[iClient]);
+	}
+	else
+	{
+		Call_PushCell(false);
+	}
 	Call_Finish();
 }
 
