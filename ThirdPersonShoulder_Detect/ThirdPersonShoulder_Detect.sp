@@ -4,7 +4,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.5.1"
+#define PLUGIN_VERSION "1.5.2"
 
 public Plugin myinfo =
 {
@@ -60,7 +60,25 @@ void CvarsChanged()
 {
 	char sGamemode[7];
 	GetConVarString(hCvar_GameMode, sGamemode, sizeof(sGamemode));
+	
+	static bool bWasVersus;
 	bVersus = StrEqual("versus", sGamemode, false);
+	if(bVersus)
+	{
+		for(int i = 1; i <= MaxClients; i++)
+			if(__IsValidClient(i))
+				TP_PushForwardToPlugins(i, true, false);
+		bWasVersus = true;
+	}
+	else
+	{
+		if(bWasVersus)
+			for(int i = 1; i <= MaxClients; i++)
+				if(__IsValidClient(i))
+					TP_PushForwardToPlugins(i);
+				
+		bWasVersus = false;
+	}
 }
 
 public Action tThirdPersonCheck(Handle hTimer)
@@ -99,15 +117,25 @@ public void QueryClientConVarCallback(QueryCookie sCookie, int iClient, ConVarQu
 	if(bLastVal == bThirdPerson[iClient])
 		return;
 	
+	if(bVersus)
+	{
+		TP_PushForwardToPlugins(iClient, true, false);
+		return;
+	}
+	TP_PushForwardToPlugins(iClient);
+}
+
+static void TP_PushForwardToPlugins(int iClient, bool bOverride=false, bool bIsThirdPerson=false)
+{
 	Call_StartForward(g_hOnThirdPersonChanged);
 	Call_PushCell(iClient);
-	if(!bVersus)
+	if(bOverride)
 	{
-		Call_PushCell(bThirdPerson[iClient]);
+		Call_PushCell(bIsThirdPerson);
 	}
 	else
 	{
-		Call_PushCell(false);
+		Call_PushCell(bThirdPerson[iClient]);
 	}
 	Call_Finish();
 }
@@ -144,6 +172,8 @@ public void eTeamChange(Handle hEvent, const char[] sMame, bool bDontBroadcast)
 
 public void OnClientPutInServer(int iClient)
 {
+	if(!IsFakeClient(iClient))
+		TP_PushForwardToPlugins(iClient, true, false);
 	bThirdPersonFix[iClient] = true;
 }
 
