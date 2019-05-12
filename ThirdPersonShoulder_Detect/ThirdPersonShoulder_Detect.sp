@@ -27,6 +27,7 @@ Handle g_hOnThirdPersonChanged = INVALID_HANDLE;
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	g_hOnThirdPersonChanged = CreateGlobalForward("TP_OnThirdPersonChanged", ET_Event, Param_Cell, Param_Cell);
+	RegPluginLibrary("ThirdPersonShoulder_Detect");
 	return APLRes_Success;
 }
 
